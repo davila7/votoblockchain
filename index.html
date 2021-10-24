@@ -149,6 +149,7 @@
 
           async function ShowVotar(){
             const candidatos = await window.contract.methods.VerCandidatos().call();
+            $('#radio_candidatos').empty();
             for(i=0;i<candidatos.length;i++){
               string = '<div class="form-check"><input class="form-check-input" type="radio" name="r_candidato" id="" value="'+candidatos[i]+'"><label class="form-check-label" for="exampleRadios1">'+candidatos[i]+'</label></div>';
               $('#radio_candidatos').append(string);
