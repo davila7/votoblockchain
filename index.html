@@ -85,16 +85,26 @@
             const myArr = resultados.split("----");
             let labels = [];
             let values = [];
+            let total_array = [];
+            $('#lista_candidatos_votos').empty();
             for(i=0;i<myArr.length;i++){
                 if(myArr[i] != ''){
                   let result = myArr[i].replace("(", "").replace(")", "");
                   const result_array = result.split(",");
                   labels.push(result_array[0]);
                   values.push(result_array[1]);
+                  total_array.push(result_array);
                 }
             }
             
-            
+            total_array.sort(function(a,b) {
+                return b[1] - a[1];
+            });
+            console.log(total_array);
+            for(i=0;i<total_array.length;i++){
+              string = '<li class="list-group-item d-flex justify-content-between align-items-center">'+total_array[i][0]+'<span class="badge badge-primary badge-pill">'+total_array[i][1]+'</span></li>';
+              $('#lista_candidatos_votos').append(string);
+            }
             
 
             var ctx = document.getElementById("myChart");
@@ -181,16 +191,13 @@
 
       </script>
     <nav class="navbar navbar-expand-lg navbar-light bg-light rounded">
-      <h3 class="text-default" >Voto Blockchain</h3>
+      <a href="" onclick="VerDashboard()"><h3 class="text-default">Voto Blockchain</h3></a>
       <button class="navbar-toggler collapsed" type="button" data-toggle="collapse" data-target="#navbarsExample09" aria-controls="navbarsExample09" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
 
       <div class="navbar-collapse collapse" id="navbarsExample09" >
         <ul class="navbar-nav mr-auto">
-          <li class="nav-item active">
-            <a class="nav-link" href="#" onclick="VerDashboard()">Dashboard <span class="sr-only">(current)</span></a>
-          </li>
           <li class="nav-item">
             <a class="nav-link" href="#" onclick="VerCandidatos()">Ver Candidatos</a>
           </li>
@@ -215,11 +222,19 @@
         </section>
         <main role="main" class="col-md-12 ml-sm-auto col-lg-12 pt-3 px-4">
           <div class="div_menu div_dashboard">
-            <div class="card">
-              <div class="card-body">
-                <canvas class="my-4" id="myChart" width="900" height="380"></canvas>
+            <div class="row">
+              <div class="col-md-8">
+                <div class="card">
+                  <div class="card-body">
+                    <canvas class="my-4" id="myChart" width="900" height="380"></canvas>
+                  </div>
+               </div> 
               </div>
-           </div> 
+              <div class="col-md-4" style="padding-top: 10px;">
+                <ul class="list-group" id="lista_candidatos_votos"></ul>
+              </div>
+            </div>
+            
           </div>
 
           <div class="div_menu div_candidatos" style="display: none;">
