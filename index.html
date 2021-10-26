@@ -28,6 +28,9 @@
                 window.web3 = new Web3(window.ethereum);
                 window.ethereum.enable();
               }
+              else{
+                alert('Ups! Debes instalar Metamask para continuar.')
+              }
           }
 
           async function loadContract(){
@@ -218,7 +221,7 @@
     <div class="container-fluid">
       <div class="row">
         <section class="col-12 text-center" id="div_cuenta">
-          <p>Tu Dirección:<span id="current_address"></span></p>
+          <p>Tu Dirección:<span id="current_address"> <a href="https://metamask.io/download.html">Instalar Metamask</a></span></p>
         </section>
         <main role="main" class="col-md-12 ml-sm-auto col-lg-12 pt-3 px-4">
           <div class="div_menu div_dashboard">
