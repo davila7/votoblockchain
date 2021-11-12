@@ -1,0 +1,324 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="https://raw.githubusercontent.com/ethereum/ethereum-org/master/dist/favicon.ico">
+
+    <title>Voto Blockchain</title>
+
+    <link rel="canonical" href="https://getbootstrap.com/docs/4.0/examples/dashboard/">
+
+    <!-- Bootstrap core CSS -->
+    <link href="https://getbootstrap.com/docs/4.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="https://getbootstrap.com/docs/4.0/examples/dashboard/dashboard.css" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+  </head>
+
+  <body>
+    <script>
+      async function loadWeb3(){
+          if(window.ethereum){
+            window.web3 = new Web3(window.ethereum);
+            window.ethereum.enable();
+          }
+          else{
+            alert('Ups! Debes instalar Metamask para continuar.')
+          }
+      }
+
+      async function loadContract(){
+          //set Abi
+          var abi = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"Ganador","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"string","name":"_nombrePersona","type":"string"},{"internalType":"uint256","name":"_edad","type":"uint256"},{"internalType":"string","name":"_idPersona","type":"string"}],"name":"Representar","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"VerCandidatos","outputs":[{"internalType":"string[]","name":"","type":"string[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"VerResultados","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"string","name":"_candidato","type":"string"}],"name":"VerVotos","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"string","name":"_candidato","type":"string"}],"name":"Votar","outputs":[],"stateMutability":"nonpayable","type":"function"}];
+
+          //set address
+          var address = "0x8e02569A7d0cb806CdEc1E4419eFb8dDC30237Fd";
+            console.log(window.web3);
+          return await new window.web3.eth.Contract(abi,address);
+      }
+
+      async function getCurrentAccount(){
+          const accounts = await window.web3.eth.getAccounts();
+          if(accounts.length > 0)
+          {
+            $('#div_cuenta').show();
+            $('#current_address').text(accounts[0]);
+          }
+          return accounts[0];
+        }
+
+      async function load(){
+            await loadWeb3();
+            await getCurrentAccount();
+            window.contract = await loadContract();
+            VerDashboard();
+            console.log('ready');
+      }
+
+      async function VerCandidatos(){
+        const candidatos = await window.contract.methods.VerCandidatos().call();
+        showDiv('.div_candidatos');
+        console.log(candidatos);
+        $('#tbody_candidatos').empty();
+        for(i = 0; i < candidatos.length; i++)
+        {
+          console.log();
+          $('#tbody_candidatos').append('<tr><td>'+candidatos[i]+'</td></tr>');
+        }
+
+      }
+
+      async function VerGanador(){
+        const ganador = await window.contract.methods.Ganador().call();
+        const votos_ganador = await window.contract.methods.VerVotos(ganador).call();
+
+        showDiv('.div_ganador');
+        $('#ganador').text(ganador+' Votos:'+votos_ganador);
+
+      }
+
+      async function VerDashboard(){
+        const resultados = await window.contract.methods.VerResultados().call();
+        const myArr = resultados.split("----");
+        let labels = [];
+        let values = [];
+        let total_array = [];
+        $('#lista_candidatos_votos').empty();
+        for(i=0;i<myArr.length;i++){
+            if(myArr[i] != ''){
+              let result = myArr[i].replace("(", "").replace(")", "");
+              const result_array = result.split(",");
+              labels.push(result_array[0]);
+              values.push(result_array[1]);
+              total_array.push(result_array);
+            }
+        }
+        
+        total_array.sort(function(a,b) {
+            return b[1] - a[1];
+        });
+        console.log(total_array);
+        for(i=0;i<total_array.length;i++){
+          string = '<li class="list-group-item d-flex justify-content-between align-items-center">'+total_array[i][0]+'<span class="badge badge-primary badge-pill">'+total_array[i][1]+'</span></li>';
+          $('#lista_candidatos_votos').append(string);
+        }
+        
+
+        var ctx = document.getElementById("myChart");
+        var myChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: values,
+              lineTension: 0,
+              backgroundColor: 'transparent',
+              borderColor: '#007bff',
+              borderWidth: 4,
+              pointBackgroundColor: '#007bff'
+            }]
+          },
+          options: {
+            scales: {
+              yAxes: [{
+                ticks: {
+                  beginAtZero: false
+                }
+              }]
+            },
+            legend: {
+              display: false,
+            }
+          }
+        });
+
+        showDiv('.div_dashboard');
+        //console.log(resultados);
+      }
+
+      function ShowAgregarCandidato(){
+        showDiv('.div_agregar_candidato');
+      }
+
+      async function AgregarCandidato(){
+        const candidatos = await window.contract.methods.VerCandidatos().call();
+        const account = await getCurrentAccount();
+        if(account != '0x9b26f31BA462818BE0405DC12fd374C482DE2A43')
+        {
+          alert('Ups! Solo el creador de este Smart Contract puede registrar candidatos');
+          return false;
+        }
+
+        const add_candidato = await window.contract.methods.Representar($('#name').val(), $('#edad').val(), candidatos.length).send({ from: account});
+        //showDiv('.div_dashboard');
+        console.log(add_candidato);
+      }
+
+      async function ShowVotar(){
+        const candidatos = await window.contract.methods.VerCandidatos().call();
+        $('#radio_candidatos').empty();
+        for(i=0;i<candidatos.length;i++){
+          string = '<div class="form-check"><input class="form-check-input" type="radio" name="r_candidato" id="" value="'+candidatos[i]+'"><label class="form-check-label" for="exampleRadios1">'+candidatos[i]+'</label></div>';
+          $('#radio_candidatos').append(string);
+        }
+        showDiv('.div_votar');
+      }
+
+      async function Votar(){
+        let seleccionado = $("#myform input[type='radio']:checked").val();
+        const account = await getCurrentAccount();
+        const add_candidato = await window.contract.methods.Votar(seleccionado).send({ from: account});
+        //showDiv('.div_dashboard');
+        console.log(add_candidato);
+      }
+
+      function showDiv(divName){
+        $('.div_menu').hide();
+        $(divName).show('slow');
+      }
+
+      function exportarTabla()
+      {
+        $("#blockTable").table2excel({
+          filename: "votacion_blockchain.xls"
+        });
+      }
+
+      load();
+
+  </script>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light rounded">
+      <a href="" onclick="VerDashboard()"><h3 class="text-default">Voto Blockchain</h3></a>
+      <button class="navbar-toggler collapsed" type="button" data-toggle="collapse" data-target="#navbarsExample09" aria-controls="navbarsExample09" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="navbar-collapse collapse" id="navbarsExample09" >
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="#" onclick="VerCandidatos()">Ver Candidatos</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" onclick="VerGanador()">Ver Ganador</a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#!" id="dropdown09" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Acciones</a>
+            <div class="dropdown-menu" aria-labelledby="dropdown09">
+              <a class="dropdown-item" href="#" onclick="ShowAgregarCandidato()">Agregar Candidato</a>
+              <a class="dropdown-item" href="#" onclick="ShowVotar()">Votar</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container-fluid">
+      <div class="row">
+        <section class="col-12 text-center" id="div_cuenta">
+          <p>Tu Dirección:<span id="current_address"> <a href="https://metamask.io/download.html">Instalar Metamask</a></span></p>
+        </section>
+        <main role="main" class="col-md-12 ml-sm-auto col-lg-12 pt-3 px-4">
+          <div class="div_menu div_dashboard">
+            <div class="row">
+              <div class="col-md-8">
+                <div class="card">
+                  <div class="card-body">
+                    <canvas class="my-4" id="myChart" width="900" height="380"></canvas>
+                  </div>
+               </div> 
+              </div>
+              <div class="col-md-4" style="padding-top: 10px;">
+                <ul class="list-group" id="lista_candidatos_votos"></ul>
+              </div>
+            </div>
+            
+          </div>
+
+          <div class="div_menu div_candidatos" style="display: none;">
+            <div class="card">
+              <div class="card-body">
+                <h2>Candidatos</h2>
+                <div class="table-responsive">
+                  <table class="table table-striped table-sm" id="blockTable">
+                    <thead>
+                      <tr>
+                        <th>Nombre</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tbody_candidatos">
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="div_menu div_ganador" style="display: none;">
+            <div class="card">
+              <div class="card-body">
+                <h2 ><span id="ganador"></span>🥇</h2>
+              </div>
+            </div> 
+          </div>
+
+          <div class="div_menu div_agregar_candidato" style="display: none;">
+            <div class="card">
+              <div class="card-body">
+                <form>
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">Nombre Completo</label>
+                    <input type="text" class="form-control" id="name" placeholder="Ingresar nombre completo">
+                  </div>
+                  <div class="form-group">
+                    <label for="exampleInputPassword1">Edad</label>
+                    <input type="text" class="form-control" id="edad" placeholder="Ingresar edad">
+                  </div>
+                  <button type="button" class="btn btn-primary" onclick="AgregarCandidato()">Agregar</button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <div class="div_menu div_votar" style="display: none;">
+            <div class="card">
+              <div class="card-body">
+                <h2>Selecciona una opción</h2>
+                <form id="myform">
+                  <div id="radio_candidatos">
+                  </div>
+                </form>
+                <br>
+                <button type="button" class="btn btn-primary" onclick="Votar()">Votar</button>
+              </div>
+            </div>
+          </div>
+          
+        </main>
+      </div>
+    </div>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery-slim.min.js"><\/script>')</script>
+    <script src="https://cdn.rawgit.com/rainabba/jquery-table2excel/1.1.0/dist/jquery.table2excel.min.js"></script>
+    <script src="https://getbootstrap.com/docs/4.0/assets/js/vendor/popper.min.js"></script>
+    <script src="https://getbootstrap.com/docs/4.0/dist/js/bootstrap.min.js"></script>
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/feather-icons/dist/feather.min.js"></script>
+    <script>
+      feather.replace()
+    </script>
+
+    <!-- Graphs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
+  </body>
+</html>
