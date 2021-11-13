@@ -49,11 +49,12 @@ async function getCurrentAccount(){
       if (currentUser) {
         $('#user_address').text(currentUser.attributes.ethAddress);
           $('#logout_btn').show('fast');
+          return currentUser.attributes.ethAddress;
       } else {
           // show the signup or login page
           $('#login_btn').show('fast');
+          return '';
       }
-    return currentUser.attributes.ethAddress;
   }
 
 async function load(){
